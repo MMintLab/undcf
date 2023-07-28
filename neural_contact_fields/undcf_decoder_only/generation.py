@@ -3,15 +3,46 @@ import time
 import numpy as np
 import torch
 from neural_contact_fields.generation import BaseGenerator
-from neural_contact_fields.undcf.models.undcf import UNDCF
-from neural_contact_fields.utils.infer_utils import inference_by_optimization
+from neural_contact_fields.undcf_decoder_only.models.virdo_undcf import VirdoUNDCF
 from neural_contact_fields.utils.marching_cubes import create_mesh
+from neural_contact_fields import loss as ncf_losses
+
+
+def get_surface_loss_fn(embed_weight: float):
+    def surface_loss_fn(model, latent, data_dict, device):
+        # Pull out relevant data.
+        object_idx_ = torch.from_numpy(data_dict["object_idx"]).to(device)
+        surface_coords_ = torch.from_numpy(data_dict["partial_pointcloud"]).to(device).float().unsqueeze(0)
+        surface_coords_ = surface_coords_.repeat(latent.shape[0], 1, 1)
+        wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
+
+        # We assume we know the object code.
+        z_object_ = model.encode_object(object_idx_)
+        z_object_ = z_object_.repeat(latent.shape[0], 1)
+        z_wrench_ = model.encode_wrench(wrist_wrench_)
+        z_wrench_ = z_wrench_.repeat(latent.shape[0], 1)
+
+        # Predict with updated latents.
+        pred_dict_ = model.forward(surface_coords_, latent, z_object_, z_wrench_)
+
+        # loss = 0.0
+
+        # Loss: all points on surface should have SDF = 0.0.
+        sdf_loss = torch.mean(torch.abs(pred_dict_["sdf"]), dim=-1)
+
+        # Latent embedding loss: shouldn't drift too far from data.
+        embedding_loss = ncf_losses.l2_loss(pred_dict_["embedding"], squared=True, reduce=False)
+
+        loss = sdf_loss + (embed_weight * embedding_loss)
+        return loss.mean(), loss
+
+    return surface_loss_fn
 
 
 class Generator(BaseGenerator):
 
-    def __init__(self, cfg: dict, model: UNDCF, generation_cfg: dict, device: torch.device):
-        self.model: UNDCF
+    def __init__(self, cfg: dict, model: VirdoUNDCF, generation_cfg: dict, device: torch.device):
+        self.model: VirdoUNDCF
         super().__init__(cfg, model, device)
         self.model.eval()
 

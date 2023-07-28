@@ -1,0 +1,35 @@
+data:
+  train:
+    dataset: ToolRotateDataset
+    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/undcf/combine_train_v1_proc/
+training:
+  out_dir: /home/markvdm/Documents/NCF/neural_contact_fields/out/models/undcf/undcf_decoder_only_v1/
+  learning_rate: 0.0001
+  epochs: 200
+  epochs_per_save: 10
+  loss_weights:
+    # Latent losses.
+    partial_sdf_loss: 1.0
+    embedding_loss: 1e-6
+    # Object module losses.
+    sdf_loss: 1.0
+    contact_loss: 0.1
+    reg_loss: 1e-6
+    embed_weight: 1e-3
+    chamfer_loss: 0.01
+    def_loss: 1.0
+pretraining:
+  out_dir: out/models/pretrain_tests/test_4/
+  learning_rate: 0.00001
+  epochs: 50000
+  epochs_per_save: 1000
+  loss_weights:
+    sdf_loss: 1.0
+    normals_loss: 0.01
+    reg_loss: 1e-6
+    embedding_loss: 1e-6
+method: undcf_decoder_only
+model:
+  z_object_size: 6
+  z_deform_size: 16
+  z_wrench_size: 16

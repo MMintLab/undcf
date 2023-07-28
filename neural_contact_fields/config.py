@@ -7,6 +7,7 @@ from torchvision import transforms
 from neural_contact_fields import neural_contact_field
 from neural_contact_fields import encoder_ndcf
 from neural_contact_fields import undcf
+from neural_contact_fields import undcf_decoder_only
 from neural_contact_fields.data.tool_rotate_dataset import ToolRotateDataset
 from neural_contact_fields.data.wrench_noise_transform import WrenchNoiseTransform
 
@@ -14,6 +15,7 @@ method_dict = {
     'neural_contact_field': neural_contact_field,
     'endcf': encoder_ndcf,
     'undcf': undcf,
+    'undcf_decoder_only': undcf_decoder_only,
 }
 
 

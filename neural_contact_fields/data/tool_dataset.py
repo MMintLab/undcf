@@ -1,3 +1,5 @@
+from multiprocessing import Pool
+
 import tqdm
 import trimesh
 
@@ -6,6 +8,16 @@ import numpy as np
 import torch.utils.data
 import torch
 import os
+
+
+class DataLoader:
+
+    def __init__(self, dataset_dir: str):
+        self.dataset_dir = dataset_dir
+
+    def __call__(self, data_fn: str):
+        example_dict = mmint_utils.load_gzip_pickle(os.path.join(self.dataset_dir, data_fn))
+        return example_dict
 
 
 class ToolDataset(torch.utils.data.Dataset):
@@ -26,7 +38,7 @@ class ToolDataset(torch.utils.data.Dataset):
         # Load dataset files and sort according to example number.
         data_fns = sorted(
             [f for f in os.listdir(self.dataset_dir) if "out" in f and ".pkl.gzip" in f and "contact" not in f],
-            key=lambda x: int(x.split(".")[0].split("_")[-1]))
+            key=lambda x: int(x.split(".")[0].split("_")[-1]))[:100]
         self.num_trials = len(data_fns)
         self.original_num_trials = len(data_fns)  # Above value may change due to bad data examples...
 
@@ -56,11 +68,12 @@ class ToolDataset(torch.utils.data.Dataset):
         self.occ_tgt = []  # Occupancy target for IoU points.
         self.contact_area = []  # Contact area.
 
+        data_loader = DataLoader(dataset_dir)
+        with Pool(32) as p:
+            results = list(tqdm.tqdm(p.imap(data_loader, data_fns, chunksize=8), total=len(data_fns)))
+
         # Load all data.
-        for trial_idx, data_fn in enumerate(data_fns):
-            example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, data_fn))
-            # contact_area_dict = mmint_utils.load_gzip_pickle(
-            #     os.path.join(dataset_dir, "out_%d_contact_area.pkl.gzip" % trial_idx))
+        for trial_idx, example_dict in enumerate(results):
 
             # Populate example info.
             contact_patch = example_dict["test"]["contact_patch"]
