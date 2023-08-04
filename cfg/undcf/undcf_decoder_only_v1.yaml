@@ -2,6 +2,7 @@ data:
   train:
     dataset: ToolRotateDataset
     dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/undcf/combine_train_v1_proc/
+    partial_pcd_idcs: [0, 1, 7]
 training:
   out_dir: /home/markvdm/Documents/NCF/neural_contact_fields/out/models/undcf/undcf_decoder_only_v1/
   learning_rate: 0.0001
