@@ -1,4 +1,4 @@
-from neural_contact_fields.undcf.models.undcf import UNDCF
+from neural_contact_fields.undcf.models.virdo_undcf import VirdoUNDCF
 from neural_contact_fields.undcf.training import Trainer
 from neural_contact_fields.undcf.generation import Generator
 from neural_contact_fields.undcf.visualization import Visualizer
@@ -6,12 +6,15 @@ from neural_contact_fields.undcf.visualization import Visualizer
 
 def get_model(cfg, dataset, device=None):
     model_cfg = cfg["model"]
-    model_method = model_cfg["method"]
 
-    if model_method == "neural_contact_field":
-        model = UNDCF(model_cfg["z_deform_size"], model_cfg["z_wrench_size"], device)
-    else:
-        raise Exception("Unknown model method: %s" % model_method)
+    try:
+        num_objects = dataset.get_num_objects()
+        num_trials = dataset.get_num_trials()
+    except:
+        raise Exception("Training with unexpected dataset type: %s." % str(type(dataset)))
+
+    model = VirdoUNDCF(num_objects, num_trials, model_cfg["z_object_size"], model_cfg["z_deform_size"],
+                       model_cfg["z_wrench_size"], device=device)
     return model
 
 
